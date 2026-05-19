@@ -2,6 +2,7 @@ package com.example.springbootlearning.controller;
 
 import com.example.springbootlearning.entity.User;
 import com.example.springbootlearning.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,13 +26,13 @@ public class UserController {
     }
 
     @PostMapping
-    public String add(@RequestBody User user) {
+    public String add(@Valid @RequestBody User user) {
         userService.add(user);
         return "新增成功，id=" + user.getId();
     }
 
     @PutMapping
-    public String update(@RequestBody User user) {
+    public String update(@Valid @RequestBody User user) {
         userService.update(user);
         return "修改成功";
     }
