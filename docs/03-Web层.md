@@ -66,3 +66,47 @@ obj.setName("张三");     // ← 通过反射调用 setter，IDEA 显示"未使
 ```
 
 Spring Boot 内置的 Jackson 库会自动完成这两步转换，不需要手动调任何序列化/反序列化方法。
+
+## 参数校验（@Valid）
+
+在 `@RequestBody` 参数前加 `@Valid`，Spring 会自动校验请求体中的字段：
+
+```java
+@PostMapping
+public String add(@Valid @RequestBody User user) {
+    userService.add(user);
+    return "新增成功";
+}
+```
+
+校验规则写在实体类或 DTO 的字段上：
+
+```java
+public class User {
+    @NotBlank(message = "姓名不能为空")
+    private String name;
+
+    @Email(message = "邮箱格式不正确")
+    private String email;
+
+    @Min(value = 0, message = "年龄不能为负数")
+    @Max(value = 150, message = "年龄超出合理范围")
+    private Integer age;
+}
+```
+
+**执行流程**：
+
+```
+请求 → @Valid 触发校验 → 字段不合法 → 抛出 MethodArgumentNotValidException
+     → @RestControllerAdvice 拦截 → 返回 400 + 错误详情 JSON
+```
+
+校验通过才会进入方法体。校验注解来自 Jakarta Validation：
+- `@NotBlank` — 字符串不能为 null 或空串
+- `@Email` — 必须是合法邮箱格式
+- `@Min` / `@Max` — 整数范围
+- `@NotNull` — 不能为 null
+- `@DecimalMin` — BigDecimal 最小值
+
+**注意**：Spring Boot 3.x 的包是 `jakarta.validation.constraints.*`，不是老的 `javax.validation.*`（Jakarta EE 9 改名）。
