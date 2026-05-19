@@ -16,6 +16,18 @@
 
 > Spring Boot 3.x 必须用带 `jakarta` 的 artifact，老的 `knife4j-spring-boot-starter` 是给 2.x 的。
 
+> **重要**：不要额外声明 `springdoc-openapi-starter-webmvc-ui` 依赖，Knife4j 4.5.0 已经内置了 springdoc 2.5.0，重复声明会导致版本冲突 → "文档请求异常"。
+
+> 传递依赖中 commons-lang3 版本有 CVE-2025-48924 漏洞，需显式覆盖为 3.18.0：
+> ```xml
+> <!-- 覆盖 knife4j → springdoc → swagger-core 传递进来的低版本 commons-lang3，修复 CVE-2025-48924 -->
+> <dependency>
+>     <groupId>org.apache.commons</groupId>
+>     <artifactId>commons-lang3</artifactId>
+>     <version>3.18.0</version>
+> </dependency>
+> ```
+
 ## 配置类
 
 ```java
@@ -64,6 +76,16 @@ public OpenAPI openAPI() {
 - `/v3/api-docs/**` — OpenAPI 3.0 的 JSON 数据
 - `/webjars/**` — 页面用到的 JS/CSS 静态资源
 
+## @Hidden 注解
+
+`@RestControllerAdvice` 的全局异常处理类需要加 `@Hidden` 注解，否则 Swagger 扫描时会触发异常，异常被全局处理器 catch 后返回 Result 格式 JSON，Knife4j 前端收到非标准 OpenAPI 格式就报"文档请求异常"。
+
+```java
+@Hidden
+@RestControllerAdvice
+public class GlobalExceptionHandler { ... }
+```
+
 ## 注解在哪看效果
 
 重启应用 → `http://localhost:8080/doc.html` → 左侧看到"用户管理""账户管理""认证"三个分组 → 点开就是具体接口。
@@ -72,3 +94,15 @@ public OpenAPI openAPI() {
 1. 先点"认证 → 登录获取 token" → Try it → 填 admin/admin123 → 拿到 token
 2. 右上角锁图标 → 粘贴 token → 点 Authorize
 3. 再去调用户管理的接口 → 自动带 Authorization 头
+
+## 常见问题："文档请求异常"
+
+**根因**：Knife4j 前端请求 `/v3/api-docs` 失败，返回的不是标准 OpenAPI JSON。
+
+可能的原因：
+
+| 原因 | 解决 |
+|------|------|
+| 额外声明了 springdoc-openapi 依赖，版本与 Knife4j 内置冲突 | 删除冗余依赖，只用 knife4j starter |
+| `@RestControllerAdvice` 异常被全局处理转成 Result 格式 | 加 `@Hidden` 排除扫描 |
+| Security 未放行 `/v3/api-docs/**` | SecurityConfig 加 `.permitAll()` |
