@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: springboot-learning
+  datasource:
+    url: jdbc:mysql://1.15.86.112:3306/springbootlearning?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: '@DancingCodes1227'
+server:
+  port: 8080
