@@ -1,0 +1,74 @@
+# Knife4j 接口文档
+
+## 和手写 Markdown 的区别
+
+手写接口文档的问题是——加了接口要记得改文档，忘了改就对不上。Knife4j 是**从代码注解自动生成**，注解和代码在一起，改了代码忘了改注解 IDE 会提示。
+
+## 依赖
+
+```xml
+<dependency>
+    <groupId>com.github.xiaoymin</groupId>
+    <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+    <version>4.5.0</version>
+</dependency>
+```
+
+> Spring Boot 3.x 必须用带 `jakarta` 的 artifact，老的 `knife4j-spring-boot-starter` 是给 2.x 的。
+
+## 配置类
+
+```java
+@Bean
+public OpenAPI openAPI() {
+    return new OpenAPI()
+        .info(new Info().title("标题").version("1.0"))
+        .addSecurityItem(...)  // 全局 JWT token 输入框
+        .components(new Components()
+            .addSecuritySchemes("Bearer", new SecurityScheme()
+                .type(SecurityScheme.Type.HTTP).scheme("bearer")));
+}
+```
+
+配置了全局 Bearer token 后，Knife4j 页面右上角会出现锁图标，填一次 token 所有接口调试都会带上。
+
+## 核心注解
+
+| 注解 | 位置 | 作用 |
+|------|------|------|
+| `@Tag(name = "用户管理")` | Controller 类 | 左侧导航分组名 |
+| `@Operation(summary = "分页查询")` | Controller 方法 | 接口说明 |
+| `@Parameter(description = "页码")` | 方法参数 | 参数说明 |
+| `@Schema(description = "用户")` | 实体类 | 实体说明 |
+| `@Schema(description = "姓名")` | 实体字段 | 字段说明 |
+
+## 访问
+
+启动后浏览器打开：`http://localhost:8080/doc.html`
+
+页面功能：
+- 左侧按 `@Tag` 分组展示所有接口
+- 点击接口 → Try it → 填参数 → 发送 → 直接看到响应
+- 右上角锁图标 → 填 token → 所有接口自动带 `Authorization: Bearer <token>`
+
+## Security 配置
+
+需要放行 Knife4j 的三个路径，否则文档页 403：
+
+```java
+.requestMatchers("/auth/login").permitAll()
+.requestMatchers("/doc.html", "/v3/api-docs/**", "/webjars/**").permitAll()
+```
+
+- `/doc.html` — 文档页面
+- `/v3/api-docs/**` — OpenAPI 3.0 的 JSON 数据
+- `/webjars/**` — 页面用到的 JS/CSS 静态资源
+
+## 注解在哪看效果
+
+重启应用 → `http://localhost:8080/doc.html` → 左侧看到"用户管理""账户管理""认证"三个分组 → 点开就是具体接口。
+
+全局 token 测试流程：
+1. 先点"认证 → 登录获取 token" → Try it → 填 admin/admin123 → 拿到 token
+2. 右上角锁图标 → 粘贴 token → 点 Authorize
+3. 再去调用户管理的接口 → 自动带 Authorization 头

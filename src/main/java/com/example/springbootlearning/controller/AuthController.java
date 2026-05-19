@@ -3,6 +3,8 @@ package com.example.springbootlearning.controller;
 import com.example.springbootlearning.config.JwtUtil;
 import com.example.springbootlearning.dto.LoginRequest;
 import com.example.springbootlearning.dto.Result;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "认证")
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -19,6 +22,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
+    @Operation(summary = "登录获取 token")
     @PostMapping("/login")
     public Result<Map<String, String>> login(@Valid @RequestBody LoginRequest req) {
         authenticationManager.authenticate(
