@@ -1,10 +1,11 @@
 package com.example.springbootlearning.controller;
 
+import com.example.springbootlearning.dto.TransferRequest;
 import com.example.springbootlearning.entity.Account;
-import com.example.springbootlearning.mapper.AccountMapper;
 import com.example.springbootlearning.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -12,12 +13,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AccountController {
 
-    private final AccountMapper accountMapper;
     private final AccountService accountService;
 
     @GetMapping
     public List<Account> list() {
-        return accountMapper.selectList(null);
+        return accountService.list();
     }
 
     @PostMapping("/transfer")

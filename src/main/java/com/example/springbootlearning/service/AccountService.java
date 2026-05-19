@@ -1,16 +1,22 @@
 package com.example.springbootlearning.service;
 
+import com.example.springbootlearning.entity.Account;
 import com.example.springbootlearning.mapper.AccountMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class AccountService {
 
     private final AccountMapper accountMapper;
+
+    public List<Account> list() {
+        return accountMapper.selectList(null);
+    }
 
     @Transactional
     public void transfer(Long fromId, Long toId, BigDecimal amount) {

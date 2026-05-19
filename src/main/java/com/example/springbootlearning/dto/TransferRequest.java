@@ -1,4 +1,4 @@
-package com.example.springbootlearning.controller;
+package com.example.springbootlearning.dto;
 
 import lombok.Data;
 import java.math.BigDecimal;
