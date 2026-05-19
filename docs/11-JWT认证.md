@@ -121,7 +121,15 @@ protected void doFilterInternal(HttpServletRequest request, ...) {
 | httpBasic | `withDefaults()` | **删除** | 不再用 HTTP Basic |
 | sessionManagement | 无 | `STATELESS` | 无状态，不创建 session |
 | addFilterBefore | 无 | JwtAuthFilter | JWT 过滤器插到认证链前面 |
-| permitAll | 无 | `/auth/login` | 登录接口必须公开 |
+| authorizeHttpRequests | 有 URL 规则 | `.anyRequest().permitAll()` | 权限下放给 `@PreAuthorize` |
+
+### 权限分层
+
+```
+SecurityConfig    →  默认全拒，只放行 /auth/login
+Controller        →  不加注解 = 默认受保护（无需 @PreAuthorize）
+@PreAuthorize     →  需要角色控制时加在方法上
+```
 
 ## 为什么设为 STATELESS
 
