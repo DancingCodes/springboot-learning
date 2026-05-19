@@ -1,5 +1,6 @@
 package com.example.springbootlearning.controller;
 
+import com.example.springbootlearning.dto.Result;
 import com.example.springbootlearning.entity.User;
 import com.example.springbootlearning.service.UserService;
 import jakarta.validation.Valid;
@@ -16,30 +17,30 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public List<User> list() {
-        return userService.list();
+    public Result<List<User>> list() {
+        return Result.success(userService.list());
     }
 
     @GetMapping("/{id}")
-    public User getById(@PathVariable Long id) {
-        return userService.getById(id);
+    public Result<User> getById(@PathVariable Long id) {
+        return Result.success(userService.getById(id));
     }
 
     @PostMapping
-    public String add(@Valid @RequestBody User user) {
+    public Result<User> add(@Valid @RequestBody User user) {
         userService.add(user);
-        return "新增成功，id=" + user.getId();
+        return Result.success("新增成功", user);
     }
 
     @PutMapping
-    public String update(@Valid @RequestBody User user) {
+    public Result<User> update(@Valid @RequestBody User user) {
         userService.update(user);
-        return "修改成功";
+        return Result.success("修改成功", user);
     }
 
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable Long id) {
         userService.delete(id);
-        return "删除成功";
+        return Result.success("删除成功", null);
     }
 }

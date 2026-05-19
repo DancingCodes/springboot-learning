@@ -1,5 +1,6 @@
 package com.example.springbootlearning.exception;
 
+import com.example.springbootlearning.dto.Result;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,28 +15,23 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleIllegalArgument(IllegalArgumentException e) {
-        return new ErrorResponse(400, e.getMessage());
+    public Result<Void> handleIllegalArgument(IllegalArgumentException e) {
+        return Result.error(400, e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, Object> handleValidation(MethodArgumentNotValidException ex) {
+    public Result<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(e ->
             errors.put(e.getField(), e.getDefaultMessage())
         );
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("code", 400);
-        result.put("msg", "参数校验失败");
-        result.put("errors", errors);
-        return result;
+        return Result.error(400, "参数校验失败", errors);
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse handleOtherException(Exception e) {
-        return new ErrorResponse(500, "服务器内部错误");
+    public Result<Void> handleOtherException(Exception e) {
+        return Result.error(500, "服务器内部错误");
     }
 }

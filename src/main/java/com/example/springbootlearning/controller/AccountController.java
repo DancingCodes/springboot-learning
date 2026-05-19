@@ -1,5 +1,6 @@
 package com.example.springbootlearning.controller;
 
+import com.example.springbootlearning.dto.Result;
 import com.example.springbootlearning.dto.TransferRequest;
 import com.example.springbootlearning.entity.Account;
 import com.example.springbootlearning.service.AccountService;
@@ -17,13 +18,13 @@ public class AccountController {
     private final AccountService accountService;
 
     @GetMapping
-    public List<Account> list() {
-        return accountService.list();
+    public Result<List<Account>> list() {
+        return Result.success(accountService.list());
     }
 
     @PostMapping("/transfer")
-    public String transfer(@Valid @RequestBody TransferRequest req) {
+    public Result<Void> transfer(@Valid @RequestBody TransferRequest req) {
         accountService.transfer(req.getFromId(), req.getToId(), req.getAmount());
-        return "转账成功";
+        return Result.success("转账成功", null);
     }
 }
