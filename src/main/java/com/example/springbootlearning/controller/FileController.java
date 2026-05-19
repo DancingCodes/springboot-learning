@@ -57,10 +57,11 @@ public class FileController {
         ));
     }
 
-    @Operation(summary = "下载文件")
+    @Operation(summary = "查看或下载文件")
     @GetMapping("/download/{storedName}")
     public ResponseEntity<Resource> download(
-            @Parameter(description = "存储文件名") @PathVariable String storedName) throws IOException {
+            @Parameter(description = "存储文件名") @PathVariable String storedName,
+            @Parameter(description = "是否下载") @RequestParam(defaultValue = "false") boolean download) throws IOException {
 
         Path filePath = uploadDir.resolve(storedName);
         Resource resource = new FileSystemResource(filePath);
@@ -69,15 +70,19 @@ public class FileController {
             return ResponseEntity.notFound().build();
         }
 
-        // 从 storedName（UUID_原始名）中提取原始文件名
         String originalName = storedName.contains("_")
                 ? storedName.substring(storedName.indexOf("_") + 1)
                 : storedName;
 
+        String disposition = download
+                ? "attachment; filename*=UTF-8''" + URLEncoder.encode(originalName, StandardCharsets.UTF_8)
+                : "inline";
+
+        MediaType mediaType = download ? MediaType.APPLICATION_OCTET_STREAM : MediaType.IMAGE_JPEG;
+
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename*=UTF-8''" + URLEncoder.encode(originalName, StandardCharsets.UTF_8))
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
                 .body(resource);
     }
 }

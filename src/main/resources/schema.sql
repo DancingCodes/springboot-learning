@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS `user` (
     name VARCHAR(50),
     email VARCHAR(100),
     age INT,
-    create_time DATETIME
+    create_time DATETIME,
+    avatar VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS account (

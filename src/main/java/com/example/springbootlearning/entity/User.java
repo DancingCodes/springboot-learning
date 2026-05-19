@@ -33,6 +33,9 @@ public class User {
     @Schema(description = "年龄")
     private Integer age;
 
+    @Schema(description = "头像文件名")
+    private String avatar;
+
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
