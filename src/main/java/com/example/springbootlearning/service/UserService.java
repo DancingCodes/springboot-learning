@@ -1,5 +1,6 @@
 package com.example.springbootlearning.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.springbootlearning.entity.Account;
 import com.example.springbootlearning.entity.User;
@@ -12,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +28,22 @@ public class UserService {
     }
 
     public Page<User> page(int pageNum, int pageSize) {
-        return userMapper.selectPage(new Page<>(pageNum, pageSize), null);
+        Page<User> page = userMapper.selectPage(new Page<>(pageNum, pageSize), null);
+        List<Long> userIds = page.getRecords().stream().map(User::getId).toList();
+        if (!userIds.isEmpty()) {
+            Map<Long, Account> accountMap = accountMapper.selectList(
+                    new LambdaQueryWrapper<Account>().in(Account::getUserId, userIds))
+                    .stream()
+                    .collect(Collectors.toMap(Account::getUserId, a -> a, (a, b) -> a));
+            page.getRecords().forEach(u -> {
+                Account a = accountMap.get(u.getId());
+                if (a != null) {
+                    u.setAccountId(a.getId());
+                    u.setBalance(a.getBalance());
+                }
+            });
+        }
+        return page;
     }
 
     public User getById(Long id) { return userMapper.selectById(id); }

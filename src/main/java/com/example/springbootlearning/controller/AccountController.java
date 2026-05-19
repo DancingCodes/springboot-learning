@@ -12,6 +12,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 @Tag(name = "账户管理")
 @RestController
 @RequestMapping("/account")
@@ -32,5 +35,13 @@ public class AccountController {
     public Result<Void> transfer(@Valid @RequestBody TransferRequest req) {
         accountService.transfer(req.getFromId(), req.getToId(), req.getAmount());
         return Result.success("转账成功", null);
+    }
+
+    @Operation(summary = "调整余额")
+    @PutMapping("/{id}/balance")
+    public Result<Void> adjustBalance(@Parameter(description = "账户ID") @PathVariable Long id,
+                                       @RequestBody Map<String, BigDecimal> body) {
+        accountService.adjustBalance(id, body.get("amount"));
+        return Result.success("调整成功", null);
     }
 }

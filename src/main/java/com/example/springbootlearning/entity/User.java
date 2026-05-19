@@ -1,11 +1,14 @@
 package com.example.springbootlearning.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -32,4 +35,12 @@ public class User {
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
+
+    @TableField(exist = false)
+    @Schema(description = "账户ID")
+    private Long accountId;
+
+    @TableField(exist = false)
+    @Schema(description = "账户余额")
+    private BigDecimal balance;
 }

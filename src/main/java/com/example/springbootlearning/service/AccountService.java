@@ -34,4 +34,14 @@ public class AccountService {
             throw new IllegalArgumentException("目标账户不存在");
         }
     }
+
+    public void adjustBalance(Long id, BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("余额不能为负数");
+        }
+        int rows = accountMapper.setBalance(id, amount);
+        if (rows == 0) {
+            throw new IllegalArgumentException("账户不存在");
+        }
+    }
 }
