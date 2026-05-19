@@ -50,7 +50,7 @@ Header             Payload              Signature
 
 ```
 config/
-├── SecurityConfig.java   ← 声明 /auth/login 公开，其余需认证，无状态
+├── SecurityConfig.java   ← 声明 /auth/login、/file/download/** 公开，其余需认证，无状态
 ├── JwtUtil.java          ← 生成 token、解析 token、验证
 └── JwtAuthFilter.java    ← 每次请求拦截，从 Header 提取 JWT 并注入认证信息
 
@@ -121,12 +121,12 @@ protected void doFilterInternal(HttpServletRequest request, ...) {
 | httpBasic | `withDefaults()` | **删除** | 不再用 HTTP Basic |
 | sessionManagement | 无 | `STATELESS` | 无状态，不创建 session |
 | addFilterBefore | 无 | JwtAuthFilter | JWT 过滤器插到认证链前面 |
-| authorizeHttpRequests | 有 URL 规则 | `.anyRequest().authenticated()` | 默认全部受保护，只显式放行 /auth/login |
+| authorizeHttpRequests | 有 URL 规则 | `.anyRequest().authenticated()` | 默认全部受保护，显式放行 /auth/login、/file/download/** 等 |
 
 ### 权限分层
 
 ```
-SecurityConfig    →  默认全拒，只放行 /auth/login
+SecurityConfig    →  默认全拒，放行 /auth/login、/file/download/**（图片需公开访问）
 Controller        →  不加注解 = 默认受保护（无需 @PreAuthorize）
 @PreAuthorize     →  需要角色控制时加在方法上
 ```

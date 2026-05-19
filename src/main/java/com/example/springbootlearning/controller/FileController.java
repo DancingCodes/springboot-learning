@@ -31,7 +31,7 @@ public class FileController {
     private final Path uploadDir;
 
     public FileController(@Value("${file.upload-dir:./uploads}") String uploadDir) {
-        this.uploadDir = Paths.get(uploadDir);
+        this.uploadDir = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.uploadDir);
         } catch (IOException e) {

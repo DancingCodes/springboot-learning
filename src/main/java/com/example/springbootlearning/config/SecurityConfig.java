@@ -32,6 +32,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/login").permitAll()
                 .requestMatchers("/doc.html", "/v3/api-docs/**", "/webjars/**").permitAll()
+                .requestMatchers("/file/download/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
