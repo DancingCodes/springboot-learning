@@ -10,14 +10,13 @@ spring:
     url: jdbc:mysql://${DB_HOST:localhost}:3306/${DB_NAME:springbootlearning}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
-server:
-  port: 8080
-
-spring:
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+
+server:
+  port: 8080
 
 file:
   upload-dir: ./uploads
