@@ -21,4 +21,7 @@ public class Account {
 
     @Schema(description = "余额")
     private BigDecimal balance;
+
+    @Schema(description = "关联用户ID")
+    private Long userId;
 }

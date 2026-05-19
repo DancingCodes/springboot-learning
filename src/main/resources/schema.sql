@@ -9,5 +9,6 @@ CREATE TABLE IF NOT EXISTS `user` (
 CREATE TABLE IF NOT EXISTS account (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50),
-    balance DECIMAL(10, 2)
+    balance DECIMAL(10, 2),
+    user_id BIGINT
 );

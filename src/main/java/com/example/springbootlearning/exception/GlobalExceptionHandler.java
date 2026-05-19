@@ -8,32 +8,24 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Hidden
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Result<Void> handleIllegalArgument(IllegalArgumentException e) {
-        return Result.error(400, e.getMessage());
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Result<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(e ->
-            errors.put(e.getField(), e.getDefaultMessage())
-        );
-        return Result.error(400, "参数校验失败", errors);
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Result<Void> handleValidation(MethodArgumentNotValidException ex) {
+        String msg = ex.getBindingResult().getFieldErrors().stream()
+                .map(e -> e.getField() + "：" + e.getDefaultMessage())
+                .collect(Collectors.joining("；"));
+        return Result.error(500, msg);
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Result<Void> handleOtherException() {
-        return Result.error(500, "服务器内部错误");
+    public Result<Void> handleOtherException(Exception e) {
+        return Result.error(500, e.getMessage());
     }
 }
