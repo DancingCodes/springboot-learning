@@ -1,5 +1,6 @@
 package com.example.springbootlearning.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.springbootlearning.entity.Account;
 import com.example.springbootlearning.mapper.AccountMapper;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,10 @@ public class AccountService {
 
     public List<Account> list() {
         return accountMapper.selectList(null);
+    }
+
+    public Page<Account> page(int pageNum, int pageSize) {
+        return accountMapper.selectPage(new Page<>(pageNum, pageSize), null);
     }
 
     @Transactional

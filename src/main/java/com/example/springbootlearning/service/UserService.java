@@ -1,5 +1,6 @@
 package com.example.springbootlearning.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.springbootlearning.entity.User;
 import com.example.springbootlearning.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,10 @@ public class UserService {
 
     public List<User> list() {
         return userMapper.selectList(null);
+    }
+
+    public Page<User> page(int pageNum, int pageSize) {
+        return userMapper.selectPage(new Page<>(pageNum, pageSize), null);
     }
 
     public User getById(Long id) { return userMapper.selectById(id); }

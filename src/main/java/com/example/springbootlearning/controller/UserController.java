@@ -1,13 +1,12 @@
 package com.example.springbootlearning.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.springbootlearning.dto.Result;
 import com.example.springbootlearning.entity.User;
 import com.example.springbootlearning.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/user")
@@ -17,8 +16,9 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public Result<List<User>> list() {
-        return Result.success(userService.list());
+    public Result<Page<User>> list(@RequestParam(defaultValue = "1") int page,
+                                   @RequestParam(defaultValue = "10") int size) {
+        return Result.success(userService.page(page, size));
     }
 
     @GetMapping("/{id}")
