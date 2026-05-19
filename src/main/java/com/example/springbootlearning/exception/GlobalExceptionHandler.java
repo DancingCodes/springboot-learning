@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Result<Void> handleOtherException(Exception e) {
+    public Result<Void> handleOtherException() {
         return Result.error(500, "服务器内部错误");
     }
 }
