@@ -2,13 +2,13 @@
 
 ## HTTP Basic 的问题
 
-HTTP Basic 每次请求都带用户名密码的 Base64，相当于**把密码写在每封信上**。而且服务端没有"登出"的概念——客户端忘了关，别人就能一直用。
+每次请求都带密码的 Base64，相当于每封信上写密码。而且没有"登出"概念，密码暴露时间太长。
 
-JWT 解决的是：**登录一次，拿一个有时效的通行证，后续请求带通行证就行，密码不再出门。**
+JWT：登录一次拿通行证，后续带通行证，密码不再出门。
 
 ## JWT 是什么
 
-JSON Web Token，一串用 `.` 分隔的三段字符串：
+一串用 `.` 分隔的三段 Base64 字符串：
 
 ```
 eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiJ9.4GZx9yHyG...
@@ -19,22 +19,19 @@ Header             Payload              Signature
 | 段 | 内容 | 说明 |
 |----|------|------|
 | Header | `{"alg":"HS256"}` | 签名算法 |
-| Payload | `{"sub":"admin","exp":1234567890}` | 用户名、过期时间等 |
-| Signature | 对前两段的签名 | 用密钥算出，防止篡改 |
+| Payload | `{"sub":"admin","exp":...}` | 用户名、过期时间等 |
+| Signature | 前两段的签名 | 用密钥算出，防篡改 |
 
-**关键**：任何人都能解开前两段看内容（Base64 不是加密），但签名的验证只有持有密钥的服务端能做。改一个字节，签名就对不上。
+前两段只是 Base64，任何人都能解码看内容。但签名的验证只有持有密钥的服务端能做——改一个字节签名就对不上。
 
 ## 认证流程
 
 ```
-1. 客户端                  2. 服务端
-   POST /auth/login         验证密码 → 生成 JWT → 返回
-   {username, password}  →  {"token":"eyJh..."}
+1. POST /auth/login {username, password}
+       → 验证密码 → 返回 {"token":"eyJh..."}
 
-3. 后续请求                4. JwtAuthFilter
-   GET /user                提取 Authorization 头
-   Authorization:           → 解析 JWT → 验证签名/过期
-   Bearer eyJh...           → 设置 SecurityContext → 放行
+2. 后续请求带 Authorization: Bearer eyJh...
+       → JwtAuthFilter 解析 → 验证签名/过期 → 设置 SecurityContext → 放行
 ```
 
 对比 HTTP Basic：
@@ -43,129 +40,126 @@ Header             Payload              Signature
 |---|---|---|
 | 密码传输 | 每次请求都带 | 只在登录时带一次 |
 | 过期 | 依赖客户端"忘记" | 内嵌到期时间 |
-| 状态 | 无状态 | 无状态 |
-| 存储 | 无 | 客户端存 token |
+| 服务端状态 | 无状态 | 无状态 |
 
-## 代码结构
-
-```
-config/
-├── SecurityConfig.java   ← 声明 /auth/login、/file/download/** 公开，其余需认证，无状态
-├── JwtUtil.java          ← 生成 token、解析 token、验证
-└── JwtAuthFilter.java    ← 每次请求拦截，从 Header 提取 JWT 并注入认证信息
-
-controller/
-└── AuthController.java   ← POST /auth/login，验证密码后返回 JWT
-
-dto/
-└── LoginRequest.java     ← {username, password}
-```
-
-## JwtUtil — 核心逻辑
+## JwtUtil — 核心工具
 
 ```java
-// 生成：把用户名写入 payload，设过期时间，用密钥签名
-public String generateToken(String username) {
-    return Jwts.builder()
-            .subject(username)
-            .expiration(new Date(now + 2小时))
-            .signWith(密钥)
-            .compact();
-}
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import javax.crypto.SecretKey;
+import java.util.Date;
 
-// 验证：解析 token，签名不对或过期则抛异常
-public boolean validateToken(String token) {
-    try {
-        Jwts.parser().verifyWith(密钥).build().parseSignedClaims(token);
-        return true;
-    } catch (JwtException e) {
-        return false;  // 签名被篡改 / token 已过期
+public class JwtUtil {
+
+    private final SecretKey key = Keys.hmacShaKeyFor(
+        "your-256-bit-secret-key-minimum-32-bytes!".getBytes()
+    );
+
+    // 生成 token：写入用户名 + 2 小时过期 + 签名
+    public String generateToken(String username) {
+        return Jwts.builder()
+                .subject(username)
+                .expiration(new Date(System.currentTimeMillis() + 2 * 3600_000))
+                .signWith(key)
+                .compact();
+    }
+
+    // 验证 token：签名被篡改或过期则返回 false
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+            return true;
+        } catch (JwtException e) {
+            return false;
+        }
+    }
+
+    // 从 token 中提取用户名
+    public String getUsernameFromToken(String token) {
+        return Jwts.parser().verifyWith(key).build()
+                .parseSignedClaims(token)
+                .getPayload().getSubject();
     }
 }
 ```
 
 ## JwtAuthFilter — 过滤器
 
-继承 `OncePerRequestFilter`，保证每个请求只执行一次：
-
 ```java
-@Override
-protected void doFilterInternal(HttpServletRequest request, ...) {
-    String authHeader = request.getHeader("Authorization");   // 1. 取 Header
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        filterChain.doFilter(request, response);  // 没 token，直接放行（Security 会拒）
-        return;
-    }
-    String token = authHeader.substring(7);   // 2. 去掉 "Bearer "
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.web.filter.OncePerRequestFilter;
+import java.io.IOException;
 
-    if (!jwtUtil.validateToken(token)) {      // 3. 验证
+public class JwtAuthFilter extends OncePerRequestFilter {
+
+    private final JwtUtil jwtUtil;
+    private final UserDetailsService userDetailsService;
+
+    public JwtAuthFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
+        String header = request.getHeader("Authorization");
+
+        // 没有 token → 直接放行，后面的 Security 会拒绝
+        if (header == null || !header.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String token = header.substring(7);  // 去掉 "Bearer "
+
+        if (!jwtUtil.validateToken(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 提取用户名 → 加载用户 → 注入 SecurityContext
+        String username = jwtUtil.getUsernameFromToken(token);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities()
+                );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
         filterChain.doFilter(request, response);
-        return;
     }
-
-    String username = jwtUtil.getUsernameFromToken(token);  // 4. 提取用户名
-    // 5. 加载用户信息，注入 SecurityContext
-    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(...);
-    SecurityContextHolder.getContext().setAuthentication(auth);
-
-    filterChain.doFilter(request, response);  // 6. 放行
 }
 ```
 
-过滤器的**位置**：通过 `addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)` 放在用户名密码过滤器之前。这样 JWT 先行处理，有 token 就认证，没 token 才走后面的流程。
+通过 `addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)` 插到认证链前面。
 
-## SecurityConfig 的关键变化
+## SecurityConfig 关键变化
 
-| 配置项 | HTTP Basic 版 | JWT 版 | 原因 |
-|--------|-------------|--------|------|
-| httpBasic | `withDefaults()` | **删除** | 不再用 HTTP Basic |
-| sessionManagement | 无 | `STATELESS` | 无状态，不创建 session |
-| addFilterBefore | 无 | JwtAuthFilter | JWT 过滤器插到认证链前面 |
-| authorizeHttpRequests | 有 URL 规则 | `.anyRequest().authenticated()` | 默认全部受保护，显式放行 /auth/login、/file/download/** 等 |
+```java
+import org.springframework.security.config.http.SessionCreationPolicy;
 
-### 权限分层
-
-```
-SecurityConfig    →  默认全拒，放行 /auth/login、/file/download/**（图片需公开访问）
-Controller        →  不加注解 = 默认受保护（无需 @PreAuthorize）
-@PreAuthorize     →  需要角色控制时加在方法上
-```
-
-## 为什么设为 STATELESS
-
-默认 Spring Security 会创建 HTTP Session 来存放认证信息。JWT 本身就是"自带状态"的凭证，不需要 Session。设为 `STATELESS` 后：
-
-- 服务端完全不存任何用户状态
-- 每个请求独立验证（token 里带的信息就够了）
-- 水平扩展友好（每台服务器都能独立验证 token）
-
-## 用 Postman 测试
-
-**1. 登录拿 token：**
-```
-POST /auth/login
-Body: {"username":"admin", "password":"admin123"}
-
-Response: {"code":200, "msg":"成功", "data":{"token":"eyJh..."}}
+http
+    .sessionManagement(session ->
+        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // 无状态
+    )
+    .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+    .authorizeHttpRequests(auth -> auth
+        .requestMatchers("/auth/login").permitAll()
+        .anyRequest().authenticated()
+    );
 ```
 
-**2. 用 token 访问接口：**
-```
-GET /user
-Header: Authorization: Bearer eyJh...
-
-Response: {"code":200, "msg":"成功", "data":{...}}
-```
-
-**3. 不带 token：**
-```
-GET /user
-→ 403 Forbidden
-```
-
-**4. 密码错：**
-```
-POST /auth/login
-Body: {"username":"admin", "password":"wrong"}
-→ 401 Unauthorized
-```
+JWT 自带状态，不需要服务端 Session。`STATELESS` 后每个请求独立验证，水平扩展友好。

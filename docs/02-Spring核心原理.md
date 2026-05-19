@@ -2,50 +2,94 @@
 
 ## IoC（控制反转）
 
-**传统写法**：你自己 `new` 对象，你掌控创建。
+**传统写法**：你需要什么，自己 `new`。
 
 ```java
-GreetingService service = new GreetingService();  // 你主动 new
+import com.example.Calculator;
+
+public class Main {
+    public static void main(String[] args) {
+        Calculator calculator = new Calculator();  // 自己 new
+    }
+}
 ```
 
-**Spring 写法**：你只声明需要什么，Spring 帮你创建好送过来。
+**Spring 写法**：你只声明要什么，Spring 帮你创建好送过来。
 
 ```java
-@Autowired
-private GreetingService greetingService;  // 你不动手，Spring 帮你搞定
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component  // 交给 Spring 管理（成为 Bean），里面的 @Autowired 才会生效
+public class AppRunner {
+
+    @Autowired  // 从容器中注入 Calculator 的实例
+    private Calculator calculator;  // 不用自己 new
+}
 ```
 
-- `@Service` → 对象交给 Spring 管（变成 Bean）
-- `@Autowired` → 从 Spring 手里拿回它管好的对象
+控制权从"你自己 new"反转到"Spring 帮你造"——这就是**控制反转**。
 
 ## Bean
 
-就是 Spring 容器管理的对象。本质上就是对象，换个名字。
+加了 `@Component`（或 `@Service`、`@Controller`、`@Repository`、`@Bean` 等）的类，Spring 启动时会扫描到，`new` 好之后放进容器里保管。这个被 Spring 管起来的对象就叫 **Bean**。
 
-加了 `@Service` / `@Component` / `@Repository` / `@Controller` 等注解，Spring 扫描到后帮你 `new` 好并保管起来 —— 这就叫"注册了一个 Bean"。
+```java
+import org.springframework.stereotype.Component;
+
+@Component  // Spring 扫描到 → new Calculator() → 放入容器 → 这就是一个 Bean
+public class Calculator {
+    public int add(int a, int b) {
+        return a + b;
+    }
+}
+```
+
+本质上就是对象，换个名字——被 Spring 管的叫 Bean，没被管的叫普通对象。
 
 ## DI（依赖注入）
 
-Spring 发现 `HelloController` 需要 `GreetingService`，自动在容器里找到对应的 Bean 并赋值到字段上。这就是"注入"。
+DI 是 IoC 的实现方式。看一个完整例子：
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class Calculator {
+    public int add(int a, int b) {
+        return a + b;
+    }
+}
+
+@Component
+public class MathService {
+
+    @Autowired
+    private Calculator calculator;
+
+    public int square(int x) {
+        return calculator.add(x, 0);  // 使用注入进来的 Bean
+    }
+}
+```
+
+Spring 发现 `MathService` 需要 `Calculator`，自动在容器里找到对应的 Bean 并注入到字段上。这就是"注入"。
+
+注入流程：
+
+```
+1. 扫描到 Calculator（@Component）→ 实例化 → 放入容器
+2. 扫描到 MathService（@Component），发现字段标注了 @Autowired
+   → 从容器找到 Calculator Bean → 注入 → MathService 实例化完成
+```
+
+你只声明了依赖关系（`@Autowired`），所有 `new` 和赋值都由 Spring 完成。
 
 ## `@SpringBootApplication` 启动时做了什么
 
 ```
-1. 扫描（@ComponentScan）→ 找到所有 @Service/@Controller 等
-2. 实例化 → new 出对象放入容器
-3. 注入（@Autowired）→ 把需要的 Bean 塞到对应字段
-```
-
-## 一个请求的完整路径
-
-```
-浏览器: GET /hello?name=张三
-
-1. Tomcat 收到请求
-2. @GetMapping("/hello") 匹配到 HelloController.hello()
-3. @RequestParam 提取 name="张三"
-4. 调用 greetingService.greet("张三")
-5. 返回 "Hello, 张三!"
-6. @RestController 把字符串直接写入 Response Body
-7. 浏览器显示结果
+1. @ComponentScan → 扫描启动类所在包及子包下所有带注解的类
+2. 实例化 → 按依赖顺序把 Bean 一个个 new 出来放入容器
+3. 注入 → 把每个 Bean 需要的依赖从容器中找出来塞进去
 ```
