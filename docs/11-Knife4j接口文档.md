@@ -88,7 +88,7 @@ public class GlobalExceptionHandler { ... }
 
 ## 注解在哪看效果
 
-重启应用 → `http://localhost:8080/doc.html` → 左侧看到"用户管理""账户管理""认证"三个分组 → 点开就是具体接口。
+重启应用 → `http://localhost:8080/doc.html` → 左侧看到"用户管理""账户管理""认证""文件管理"四个分组 → 点开就是具体接口。
 
 全局 token 测试流程：
 1. 先点"认证 → 登录获取 token" → Try it → 填 admin/admin123 → 拿到 token

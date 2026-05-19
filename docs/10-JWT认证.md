@@ -121,7 +121,7 @@ protected void doFilterInternal(HttpServletRequest request, ...) {
 | httpBasic | `withDefaults()` | **删除** | 不再用 HTTP Basic |
 | sessionManagement | 无 | `STATELESS` | 无状态，不创建 session |
 | addFilterBefore | 无 | JwtAuthFilter | JWT 过滤器插到认证链前面 |
-| authorizeHttpRequests | 有 URL 规则 | `.anyRequest().permitAll()` | 权限下放给 `@PreAuthorize` |
+| authorizeHttpRequests | 有 URL 规则 | `.anyRequest().authenticated()` | 默认全部受保护，只显式放行 /auth/login |
 
 ### 权限分层
 
@@ -167,5 +167,5 @@ GET /user
 ```
 POST /auth/login
 Body: {"username":"admin", "password":"wrong"}
-→ 403 Forbidden
+→ 401 Unauthorized
 ```
