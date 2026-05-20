@@ -45,45 +45,44 @@ Header             Payload              Signature
 ## JwtUtil — 核心工具
 
 ```java
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import javax.crypto.SecretKey;
-import java.util.Date;
-
+@Component
 public class JwtUtil {
 
-    private final SecretKey key = Keys.hmacShaKeyFor(
-        "your-256-bit-secret-key-minimum-32-bytes!".getBytes()
-    );
+    @Value("${jwt.secret}")
+    private String secret;
 
-    // 生成 token：写入用户名 + 2 小时过期 + 签名
+    private SecretKey getKey() {
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    // 生成 token：只写入用户名 + 签发时间（无过期，学习项目不设限）
     public String generateToken(String username) {
         return Jwts.builder()
                 .subject(username)
-                .expiration(new Date(System.currentTimeMillis() + 2 * 3600_000))
-                .signWith(key)
+                .issuedAt(new Date())
+                .signWith(getKey())
                 .compact();
     }
 
-    // 验证 token：签名被篡改或过期则返回 false
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+            Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token);
             return true;
         } catch (JwtException e) {
             return false;
         }
     }
 
-    // 从 token 中提取用户名
     public String getUsernameFromToken(String token) {
-        return Jwts.parser().verifyWith(key).build()
-                .parseSignedClaims(token)
-                .getPayload().getSubject();
+        return Jwts.parser().verifyWith(getKey()).build()
+                .parseSignedClaims(token).getPayload().getSubject();
     }
 }
 ```
+
+**密钥外置：** `application.yml` 里 `jwt.secret: dancingcodes-...`，通过 `@Value` 注入，不再硬编码。
+
+**无过期：** 学习项目去掉了 `.expiration()`，token 只有签发时间。生产项目建议加上。
 
 ## JwtAuthFilter — 过滤器
 

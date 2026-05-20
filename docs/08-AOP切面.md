@@ -58,18 +58,44 @@ public class ControllerLogAspect {
 
     @Around("controllerMethods()")
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
+        String id = Integer.toHexString(ThreadLocalRandom.current().nextInt(0x1000, 0x10000));
         String method = joinPoint.getSignature().toShortString();
         Object[] args = joinPoint.getArgs();
+        String user = currentUser();
 
-        log.info("→ {} | 参数: {}", method, args);   // 执行前
+        log.info("→ [{}] {} | {} | 参数: {}", id, user, method, args.toString());
         long start = System.currentTimeMillis();
-        Object result = joinPoint.proceed();           // 执行原方法
-        log.info("← {} | 耗时: {}ms", method, System.currentTimeMillis() - start);  // 执行后
 
-        return result;  // 必须返回，否则调用方拿不到结果
+        try {
+            Object result = joinPoint.proceed();
+            log.info("← [{}] {} | {} | 耗时: {}ms", id, user, method, System.currentTimeMillis() - start);
+            return result;
+        } catch (Throwable e) {
+            log.error("✕ [{}] {} | {} | 耗时: {}ms | 异常: {}", id, user, method, System.currentTimeMillis() - start, e.toString());
+            throw e;  // 重新抛出，不吞异常
+        }
+    }
+
+    private String currentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth instanceof AnonymousAuthenticationToken) return "-";
+        return auth.getName();
     }
 }
 ```
+
+**日志效果：**
+```
+→ [a3f2] admin | UserController.list(..) | 参数: [1, 10]
+← [a3f2] admin | UserController.list(..) | 耗时: 35ms
+```
+
+### 设计要点
+
+- **随机 hex ID** — 4 位随机 hex，并发请求不会交叉分不清，不像递增序号那样随时间变大
+- **不记返回值** — Page 对象 toString 太啰嗦，记核心信息就够
+- **异常重新抛出** — catch 后 `throw e`，不吞异常，`@RestControllerAdvice` 正常兜底
+- **匿名用户** — Spring Security 给没登录的人自动塞 `AnonymousAuthenticationToken`，需排除后显示 `-`
 
 `@Around` 必须调 `joinPoint.proceed()` 并返回其结果，否则原方法不会执行。
 

@@ -42,3 +42,6 @@ server:
 
 file:
   upload-dir: ./uploads
+
+interest:
+  annual-rate: 0.03

@@ -59,8 +59,8 @@ Spring Cache 是缓存抽象层。你只跟注解打交道，底层是 Redis 还
 public UserVO getById(Long id) { ... }
 
 // 分页查询 —— 按页码缓存
-@Cacheable(value = "userPage", key = "#pageNum + '_' + #pageSize", unless = "#result == null")
-public Page<UserVO> page(int pageNum, int pageSize) { ... }
+@Cacheable(value = "userPage", key = "#current + '_' + #size", unless = "#result == null")
+public Page<UserVO> page(int current, int size) { ... }
 
 // 新增 —— 清掉所有分页缓存（新数据影响所有页）
 @CacheEvict(value = "userPage", allEntries = true)
