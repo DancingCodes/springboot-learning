@@ -29,13 +29,9 @@ public class UserService {
     private final AccountMapper accountMapper;
     private final UserConverter userConverter;
 
-    public List<User> list() {
-        return userMapper.selectList(null);
-    }
-
-    @Cacheable(value = "userPage", key = "#pageNum + '_' + #pageSize", unless = "#result == null")
-    public Page<UserVO> page(int pageNum, int pageSize) {
-        Page<User> page = userMapper.selectPage(new Page<>(pageNum, pageSize), null);
+    @Cacheable(value = "userPage", key = "#current + '_' + #size", unless = "#result == null")
+    public Page<UserVO> page(int current, int size) {
+        Page<User> page = userMapper.selectPage(new Page<>(current, size), null);
         List<Long> userIds = page.getRecords().stream().map(User::getId).toList();
         Map<Long, Account> accountMap = Map.of();
         if (!userIds.isEmpty()) {
@@ -48,7 +44,7 @@ public class UserService {
         List<UserVO> voList = page.getRecords().stream()
                 .map(u -> userConverter.toVO(u, finalMap.get(u.getId())))
                 .toList();
-        Page<UserVO> result = new Page<>(pageNum, pageSize, page.getTotal());
+        Page<UserVO> result = new Page<>(current, size, page.getTotal());
         result.setRecords(voList);
         return result;
     }

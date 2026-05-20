@@ -25,9 +25,9 @@ public class UserController {
 
     @Operation(summary = "分页查询用户")
     @GetMapping
-    public Result<Page<UserVO>> list(@Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
+    public Result<Page<UserVO>> list(@Parameter(description = "页码") @RequestParam(defaultValue = "1") int current,
                                    @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") int size) {
-        return Result.success(userService.page(page, size));
+        return Result.success(userService.page(current, size));
     }
 
     @Operation(summary = "查询单个用户")

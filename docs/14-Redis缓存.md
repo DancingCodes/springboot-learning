@@ -105,18 +105,27 @@ public void delete(Long id) { ... }
 
 ```java
 @Configuration
-@EnableCaching  // 激活 @Cacheable / @CacheEvict / @CachePut
+@EnableCaching
 public class CacheConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        // 自定义 ObjectMapper：支持 LocalDateTime + 保留类型信息
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.activateDefaultTyping(
+                mapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL);
+
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(30))  // 默认 30 分钟过期
-                .prefixCacheNameWith("springboot-learning::")  // 全局 key 前缀，隔离项目
+                .entryTtl(Duration.ofMinutes(30))
+                .prefixCacheNameWith("springboot-learning::")
                 .serializeKeysWith(
                     SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(
-                    SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+                    SerializationPair.fromSerializer(
+                        new GenericJackson2JsonRedisSerializer(mapper)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
@@ -124,6 +133,12 @@ public class CacheConfig {
     }
 }
 ```
+
+**为什么需要自定义 ObjectMapper**：
+
+- `JavaTimeModule` — 处理 `LocalDateTime` 等 Java 8 时间类型，默认的 `GenericJackson2JsonRedisSerializer` 没有注册此模块，序列化时抛 `Java 8 date/time type not supported`
+- `disable(WRITE_DATES_AS_TIMESTAMPS)` — 日期以 ISO 字符串（`"2026-05-20T11:13:43"`）存储，而非时间戳数组
+- `activateDefaultTyping` — JSON 中写入 `@class` 字段，反序列化时知道还原成哪个 Java 类型
 
 **为什么换 JSON 序列化**：Spring Boot 默认用 JDK 序列化（二进制），不可读、体积大。`GenericJackson2JsonRedisSerializer` 存成 JSON，用 `redis-cli` 能直接看懂：
 
