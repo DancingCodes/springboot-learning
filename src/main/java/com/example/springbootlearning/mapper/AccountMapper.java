@@ -21,4 +21,5 @@ public interface AccountMapper extends BaseMapper<Account> {
 
     @Update("UPDATE account SET balance = balance * (1 + #{dailyRate})")
     void addInterest(@Param("dailyRate") BigDecimal dailyRate);
+
 }
