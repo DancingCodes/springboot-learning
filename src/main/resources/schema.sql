@@ -18,3 +18,11 @@ CREATE TABLE IF NOT EXISTS sys_user (
     username VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS transfer_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    from_account_id BIGINT,
+    to_account_id BIGINT,
+    amount DECIMAL(10, 2),
+    create_time DATETIME
+);

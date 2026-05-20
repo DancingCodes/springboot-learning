@@ -1,6 +1,5 @@
 package com.example.springbootlearning.service;
 
-import com.example.springbootlearning.entity.Account;
 import com.example.springbootlearning.mapper.AccountMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,6 +11,7 @@ import java.math.BigDecimal;
 public class AccountService {
 
     private final AccountMapper accountMapper;
+    private final TransferLogService transferLogService;
 
     @Transactional
     public void transfer(Long fromId, Long toId, BigDecimal amount) {
@@ -23,6 +23,7 @@ public class AccountService {
         if (rows2 == 0) {
             throw new IllegalArgumentException("目标账户不存在");
         }
+        transferLogService.logAsync(fromId, toId, amount);
     }
 
     public void adjustBalance(Long id, BigDecimal amount) {
