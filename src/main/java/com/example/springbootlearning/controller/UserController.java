@@ -1,6 +1,7 @@
 package com.example.springbootlearning.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.springbootlearning.converter.UserConverter;
 import com.example.springbootlearning.dto.Result;
 import com.example.springbootlearning.dto.UserSaveDTO;
 import com.example.springbootlearning.dto.UserVO;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final UserConverter userConverter;
 
     @Operation(summary = "分页查询用户")
     @GetMapping
@@ -37,11 +39,7 @@ public class UserController {
     @Operation(summary = "新增用户")
     @PostMapping
     public Result<UserVO> add(@Valid @RequestBody UserSaveDTO request) {
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setAge(request.getAge());
-        user.setAvatar(request.getAvatar());
+        User user = userConverter.toEntity(request);
         userService.add(user);
         return Result.success("新增成功", userService.getById(user.getId()));
     }
@@ -49,12 +47,7 @@ public class UserController {
     @Operation(summary = "修改用户")
     @PutMapping
     public Result<UserVO> update(@Valid @RequestBody UserSaveDTO request) {
-        User user = new User();
-        user.setId(request.getId());
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setAge(request.getAge());
-        user.setAvatar(request.getAvatar());
+        User user = userConverter.toEntity(request);
         userService.update(user);
         return Result.success("修改成功", userService.getById(request.getId()));
     }
