@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -13,20 +14,17 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    // 生产环境应从外部配置注入，不硬编码
-    private static final String SECRET = "dancingcodes-springboot-learning-jwt-secret-key-256bit!!";
-    private static final long EXPIRATION_MS = 2 * 60 * 60 * 1000; // 2 小时
+    @Value("${jwt.secret}")
+    private String secret;
 
     private SecretKey getKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String username) {
-        Date now = new Date();
         return Jwts.builder()
                 .subject(username)
-                .issuedAt(now)
-                .expiration(new Date(now.getTime() + EXPIRATION_MS))
+                .issuedAt(new Date())
                 .signWith(getKey())
                 .compact();
     }

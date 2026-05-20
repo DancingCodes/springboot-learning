@@ -3,6 +3,8 @@ spring:
     active: local
   application:
     name: springboot-learning
+  main:
+    log-startup-info: false
   sql:
     init:
       mode: always
@@ -20,6 +22,20 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss} %-5level %logger{20} - %msg%n"
+  level:
+    root: warn
+    com.example.springbootlearning: info
+
+mybatis-plus:
+  global-config:
+    banner: false
+
+jwt:
+  secret: dancingcodes-springboot-learning-jwt-secret-key-256bit!!
 
 server:
   port: 8080

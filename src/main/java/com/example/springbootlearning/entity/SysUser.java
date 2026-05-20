@@ -5,20 +5,19 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import java.math.BigDecimal;
 
 @Data
-@TableName("account")
-@Schema(description = "账户")
-public class Account {
+@TableName("sys_user")
+@Schema(description = "系统用户")
+public class SysUser {
 
     @TableId(type = IdType.AUTO)
-    @Schema(description = "账户ID")
+    @Schema(description = "用户ID")
     private Long id;
 
-    @Schema(description = "余额")
-    private BigDecimal balance;
+    @Schema(description = "用户名")
+    private String username;
 
-    @Schema(description = "关联用户ID")
-    private Long userId;
+    @Schema(description = "密码")
+    private String password;
 }

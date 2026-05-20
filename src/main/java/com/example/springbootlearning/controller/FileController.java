@@ -1,5 +1,6 @@
 package com.example.springbootlearning.controller;
 
+import com.example.springbootlearning.dto.FileVO;
 import com.example.springbootlearning.dto.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 import java.util.UUID;
 
 @Tag(name = "文件管理")
@@ -41,26 +41,25 @@ public class FileController {
 
     @Operation(summary = "上传文件")
     @PostMapping("/upload")
-    public Result<Map<String, String>> upload(
+    public Result<FileVO> upload(
             @Parameter(description = "文件") @RequestParam("file") MultipartFile file) throws IOException {
 
         String originalName = file.getOriginalFilename();
-        // 用 UUID 做文件名，防止重名覆盖
         String storedName = UUID.randomUUID().toString() + "_" + originalName;
         Path target = uploadDir.resolve(storedName);
         file.transferTo(target.toFile());
 
-        return Result.success("上传成功", Map.of(
-                "originalName", originalName != null ? originalName : "",
-                "storedName", storedName,
-                "size", String.valueOf(file.getSize())
-        ));
+        FileVO vo = new FileVO();
+        vo.setOriginalName(originalName != null ? originalName : "");
+        vo.setStoredName(storedName);
+        vo.setSize(file.getSize());
+        return Result.success(vo);
     }
 
     @Operation(summary = "查看或下载文件")
-    @GetMapping("/download/{storedName}")
+    @GetMapping("/download")
     public ResponseEntity<Resource> download(
-            @Parameter(description = "存储文件名") @PathVariable String storedName,
+            @Parameter(description = "存储文件名") @RequestParam String storedName,
             @Parameter(description = "是否下载") @RequestParam(defaultValue = "false") boolean download) throws IOException {
 
         Path filePath = uploadDir.resolve(storedName);
