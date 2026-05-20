@@ -2,6 +2,7 @@ package com.example.springbootlearning.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.springbootlearning.dto.UserVO;
 import com.example.springbootlearning.entity.Account;
 import com.example.springbootlearning.entity.User;
 import com.example.springbootlearning.mapper.AccountMapper;
@@ -27,26 +28,32 @@ public class UserService {
         return userMapper.selectList(null);
     }
 
-    public Page<User> page(int pageNum, int pageSize) {
+    public Page<UserVO> page(int pageNum, int pageSize) {
         Page<User> page = userMapper.selectPage(new Page<>(pageNum, pageSize), null);
         List<Long> userIds = page.getRecords().stream().map(User::getId).toList();
+        Map<Long, Account> accountMap = Map.of();
         if (!userIds.isEmpty()) {
-            Map<Long, Account> accountMap = accountMapper.selectList(
+            accountMap = accountMapper.selectList(
                     new LambdaQueryWrapper<Account>().in(Account::getUserId, userIds))
                     .stream()
                     .collect(Collectors.toMap(Account::getUserId, a -> a, (a, b) -> a));
-            page.getRecords().forEach(u -> {
-                Account a = accountMap.get(u.getId());
-                if (a != null) {
-                    u.setAccountId(a.getId());
-                    u.setBalance(a.getBalance());
-                }
-            });
         }
-        return page;
+        Map<Long, Account> finalMap = accountMap;
+        List<UserVO> voList = page.getRecords().stream()
+                .map(u -> toVO(u, finalMap.get(u.getId())))
+                .toList();
+        Page<UserVO> result = new Page<>(pageNum, pageSize, page.getTotal());
+        result.setRecords(voList);
+        return result;
     }
 
-    public User getById(Long id) { return userMapper.selectById(id); }
+    public UserVO getById(Long id) {
+        User user = userMapper.selectById(id);
+        if (user == null) return null;
+        Account account = accountMapper.selectOne(
+                new LambdaQueryWrapper<Account>().eq(Account::getUserId, id));
+        return toVO(user, account);
+    }
 
     @Transactional
     public void add(User user) {
@@ -65,5 +72,20 @@ public class UserService {
 
     public void delete(Long id) {
         userMapper.deleteById(id);
+    }
+
+    private UserVO toVO(User user, Account account) {
+        UserVO vo = new UserVO();
+        vo.setId(user.getId());
+        vo.setName(user.getName());
+        vo.setEmail(user.getEmail());
+        vo.setAge(user.getAge());
+        vo.setAvatar(user.getAvatar());
+        vo.setCreateTime(user.getCreateTime());
+        if (account != null) {
+            vo.setAccountId(account.getId());
+            vo.setBalance(account.getBalance());
+        }
+        return vo;
     }
 }

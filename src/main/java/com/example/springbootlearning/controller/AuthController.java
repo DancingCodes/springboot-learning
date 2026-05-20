@@ -1,7 +1,7 @@
 package com.example.springbootlearning.controller;
 
 import com.example.springbootlearning.config.JwtUtil;
-import com.example.springbootlearning.dto.LoginRequest;
+import com.example.springbootlearning.dto.LoginDTO;
 import com.example.springbootlearning.dto.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,7 +24,7 @@ public class AuthController {
 
     @Operation(summary = "登录获取 token")
     @PostMapping("/login")
-    public Result<Map<String, String>> login(@Valid @RequestBody LoginRequest req) {
+    public Result<Map<String, String>> login(@Valid @RequestBody LoginDTO req) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword())
         );

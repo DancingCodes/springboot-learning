@@ -150,3 +150,29 @@ public class User {
 - `@DecimalMin` — BigDecimal 最小值
 
 **注意**：Spring Boot 3.x 的包是 `jakarta.validation.constraints.*`，不是老的 `javax.validation.*`（Jakarta EE 9 改名）。
+
+### @Valid 校验的对象：DTO 而不是 Entity
+
+上面的示例直接在 Entity（`User`）上加校验注解，学习阶段可以，但实际项目推荐用 **入参 DTO**：
+
+```java
+// ❌ 不推荐：直接暴露 Entity，前端能传 id、createTime 等后端控制的字段
+@PostMapping("/user")
+public Result<User> add(@Valid @RequestBody User user) { ... }
+
+// ✅ 推荐：用 DTO 只暴露该填的字段
+@PostMapping("/user")
+public Result<UserVO> add(@Valid @RequestBody UserSaveDTO request) {
+    // Controller 里做 DTO → Entity 转换
+    User user = new User();
+    user.setName(request.getName());
+    // ...
+}
+```
+
+| 方式 | 问题 |
+|------|------|
+| 直接收 Entity | 前端能传 `id`、`createTime` 等不该控制的字段 |
+| 收 DTO | 只暴露 `name`、`email`、`age`，安全可控 |
+
+> 详见 `04-数据层与事务.md` 的"VO 与 DTO"章节。

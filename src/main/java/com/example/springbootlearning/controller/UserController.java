@@ -2,6 +2,8 @@ package com.example.springbootlearning.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.springbootlearning.dto.Result;
+import com.example.springbootlearning.dto.UserSaveDTO;
+import com.example.springbootlearning.dto.UserVO;
 import com.example.springbootlearning.entity.User;
 import com.example.springbootlearning.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,29 +23,40 @@ public class UserController {
 
     @Operation(summary = "分页查询用户")
     @GetMapping
-    public Result<Page<User>> list(@Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
+    public Result<Page<UserVO>> list(@Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
                                    @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") int size) {
         return Result.success(userService.page(page, size));
     }
 
     @Operation(summary = "查询单个用户")
     @GetMapping("/{id}")
-    public Result<User> getById(@Parameter(description = "用户ID") @PathVariable Long id) {
+    public Result<UserVO> getById(@Parameter(description = "用户ID") @PathVariable Long id) {
         return Result.success(userService.getById(id));
     }
 
     @Operation(summary = "新增用户")
     @PostMapping
-    public Result<User> add(@Valid @RequestBody User user) {
+    public Result<UserVO> add(@Valid @RequestBody UserSaveDTO request) {
+        User user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setAge(request.getAge());
+        user.setAvatar(request.getAvatar());
         userService.add(user);
-        return Result.success("新增成功", user);
+        return Result.success("新增成功", userService.getById(user.getId()));
     }
 
     @Operation(summary = "修改用户")
     @PutMapping
-    public Result<User> update(@Valid @RequestBody User user) {
+    public Result<UserVO> update(@Valid @RequestBody UserSaveDTO request) {
+        User user = new User();
+        user.setId(request.getId());
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setAge(request.getAge());
+        user.setAvatar(request.getAvatar());
         userService.update(user);
-        return Result.success("修改成功", user);
+        return Result.success("修改成功", userService.getById(request.getId()));
     }
 
     @Operation(summary = "删除用户")

@@ -1,7 +1,7 @@
 package com.example.springbootlearning.controller;
 
 import com.example.springbootlearning.dto.Result;
-import com.example.springbootlearning.dto.TransferRequest;
+import com.example.springbootlearning.dto.TransferDTO;
 import com.example.springbootlearning.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,7 +23,7 @@ public class AccountController {
 
     @Operation(summary = "转账")
     @PostMapping("/transfer")
-    public Result<Void> transfer(@Valid @RequestBody TransferRequest req) {
+    public Result<Void> transfer(@Valid @RequestBody TransferDTO req) {
         accountService.transfer(req.getFromId(), req.getToId(), req.getAmount());
         return Result.success("转账成功", null);
     }

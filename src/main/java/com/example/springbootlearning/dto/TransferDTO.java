@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 @Data
 @Schema(description = "转账请求")
-public class TransferRequest {
+public class TransferDTO {
 
     @NotNull(message = "转出账户ID不能为空")
     @Schema(description = "转出账户ID")

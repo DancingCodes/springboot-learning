@@ -1,22 +1,14 @@
-package com.example.springbootlearning.entity;
+package com.example.springbootlearning.dto;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
-@TableName("user")
-@Schema(description = "用户")
-public class User {
+@Schema(description = "用户新增/修改请求")
+public class UserSaveDTO {
 
-    @TableId(type = IdType.AUTO)
-    @Schema(description = "用户ID")
+    @Schema(description = "用户ID（修改时必填）")
     private Long id;
 
     @NotBlank(message = "姓名不能为空")
@@ -34,8 +26,4 @@ public class User {
 
     @Schema(description = "头像文件名")
     private String avatar;
-
-    @Schema(description = "创建时间")
-    private LocalDateTime createTime;
-
 }
