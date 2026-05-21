@@ -12,4 +12,6 @@ public class FileVO {
     private String storedName;
     @Schema(description = "文件大小（字节）")
     private long size;
+    @Schema(description = "文件访问地址")
+    private String url;
 }

@@ -1,5 +1,6 @@
 package com.example.springbootlearning.dto;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -24,6 +25,10 @@ public class UserVO {
 
     @Schema(description = "头像文件名")
     private String avatar;
+
+    @Schema(description = "头像访问地址")
+    @TableField(exist = false)
+    private String avatarUrl;
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;

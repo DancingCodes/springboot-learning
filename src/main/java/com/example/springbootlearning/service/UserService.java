@@ -22,15 +22,22 @@ public class UserService {
 
     private final UserMapper userMapper;
     private final AccountMapper accountMapper;
+    private final CosService cosService;
 
     @Cacheable(value = "userPage", key = "#current + '_' + #size", unless = "#result == null")
     public Page<UserVO> page(int current, int size) {
-        return userMapper.selectUserPage(new Page<>(current, size));
+        Page<UserVO> result = userMapper.selectUserPage(new Page<>(current, size));
+        result.getRecords().forEach(this::fillAvatarUrl);
+        return result;
     }
 
     @Cacheable(value = "user", key = "#id", unless = "#result == null")
     public UserVO getById(Long id) {
-        return userMapper.selectUserWithAccount(id);
+        UserVO vo = userMapper.selectUserWithAccount(id);
+        if (vo != null) {
+            fillAvatarUrl(vo);
+        }
+        return vo;
     }
 
     @CacheEvict(value = "userPage", allEntries = true)
@@ -58,5 +65,11 @@ public class UserService {
     })
     public void delete(Long id) {
         userMapper.deleteById(id);
+    }
+
+    private void fillAvatarUrl(UserVO vo) {
+        if (vo.getAvatar() != null && !vo.getAvatar().isEmpty()) {
+            vo.setAvatarUrl(cosService.getCdnUrl(vo.getAvatar()));
+        }
     }
 }

@@ -40,8 +40,12 @@ jwt:
 server:
   port: 8080
 
-file:
-  upload-dir: ./uploads
+cos:
+  secret-id: ${COS_SECRET_ID:}
+  secret-key: ${COS_SECRET_KEY:}
+  region: ${COS_REGION:ap-beijing}
+  bucket: ${COS_BUCKET:dancingcodes-1303900201}
+  cdn-domain: ${COS_CDN_DOMAIN:https://cdn.moonc.love}
 
 interest:
   annual-rate: 0.03
