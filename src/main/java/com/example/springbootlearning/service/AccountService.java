@@ -1,7 +1,10 @@
 package com.example.springbootlearning.service;
 
+import com.example.springbootlearning.config.RabbitMQConfig;
+import com.example.springbootlearning.dto.TransferLogMessage;
 import com.example.springbootlearning.mapper.AccountMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -11,7 +14,7 @@ import java.math.BigDecimal;
 public class AccountService {
 
     private final AccountMapper accountMapper;
-    private final TransferLogService transferLogService;
+    private final RabbitTemplate rabbitTemplate;
 
     @Transactional
     public void transfer(Long fromId, Long toId, BigDecimal amount) {
@@ -23,7 +26,8 @@ public class AccountService {
         if (rows2 == 0) {
             throw new IllegalArgumentException("目标账户不存在");
         }
-        transferLogService.logAsync(fromId, toId, amount);
+        TransferLogMessage msg = new TransferLogMessage(fromId, toId, amount);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, msg);
     }
 
     public void adjustBalance(Long id, BigDecimal amount) {
